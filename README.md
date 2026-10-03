@@ -1,5 +1,15 @@
 # pi-zgrep
 
+This is Rodrigo's Windows-compatible fork of [carvalab/pi-zgrep](https://github.com/carvalab/pi-zgrep), based on upstream 0.3.0. All upstream search modes, filters, commands, automatic indexing, daemon behavior, environment switches, fixtures, documentation and history are retained. See [WINDOWS.md](WINDOWS.md) for the changes and real-host validation.
+
+Install this fork in Pi:
+
+```text
+pi install git:github.com/rodrigojager/pi-zgrep@v0.3.1-rodrigo.1
+```
+
+The original upstream documentation follows. Its `npm:pi-zgrep` commands install the upstream package, not this fork. This fork is distributed through GitHub, with npm publication disabled.
+
 Semantic code search for the [pi](https://github.com/earendil-works/pi-coding-agent) coding agent. One tool, four routes (hybrid, BM25, vector, ripgrep), auto-indexed.
 
 [![npm version](https://img.shields.io/npm/v/pi-zgrep)](https://www.npmjs.com/package/pi-zgrep)
@@ -109,7 +119,7 @@ On hosts without node-gyp the first attempt can fail on sharp's optional postins
 
 **Parse miss.** If upstream changes its output shape, the tool falls back to raw text passthrough prefixed with a hint to run `/zg-status` and file an issue at [carvalab/pi-zgrep](https://github.com/carvalab/pi-zgrep/issues). The fixtures under `test/fixtures/` are the compat tripwire for the parser.
 
-**Windows: not supported in 0.2.0.** The resolver spawns `zg` directly with `shell: false`, which cannot launch npm's `.cmd` shims. macOS and Linux only.
+**Windows:** this fork supports packaged JavaScript entries, PATH executables and npm `.cmd` shims. Background processes are hidden, quoted index paths and option values are preserved, and results retain paths with spaces and drive letters. See [WINDOWS.md](WINDOWS.md).
 
 ## Benchmarks
 

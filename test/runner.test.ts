@@ -99,13 +99,13 @@ test("runner.version() returns captured line after successful probe", async () =
   // path exercised (any stdout triggers the version cache).
   const runner = makeRunner({
     cwd: process.cwd(),
-    env: { PI_ZG_BIN: "/bin/true" },
+    env: { PI_ZG_BIN: process.execPath },
   });
   const bin = await runner.probe();
-  assert.equal(bin, "/bin/true");
+  assert.equal(bin, process.execPath);
   // /bin/true prints nothing; cache captures an empty string. The
   // contract is "captured line is returned verbatim", not "non-empty".
-  assert.equal(typeof runner.version?.(), "string");
+  assert.match(runner.version?.() ?? "", /^v\d+/u);
 });
 
 test("runner.version() is undefined when probe fails (no cache poisoning)", async () => {

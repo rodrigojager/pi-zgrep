@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.3.1-rodrigo.1] - 2026-10-03
+
+Windows-compatible fork of the complete upstream 0.3.0 package. Fix process/shim and daemon launching, paths with spaces and drive letters, quoted index arguments and valued flags, query error reporting, current-call cancellation, stderr progress and empty-result parsing. Retain all upstream routes, parameters, commands, lifecycle controls and environment switches.
+
+Add an English workspace-search skill, Pi integration examples, Windows/Linux CI and a real Pi SDK smoke. Validated locally on Windows x64 / Node 26.1.0 / Pi 1.0.0 / engine 0.2.2: lint, formatting, type checks, 62 regression tests, two real-engine E2E tests and 13 Pi SDK checks. See WINDOWS.md for changes and validation boundaries.
+
 All notable changes to pi-zgrep. Release sections are curated before tagging
 (user-facing notes, not commit subjects); `git-cliff` with `cliff.toml` drafts
 the raw commit list to rewrite from.

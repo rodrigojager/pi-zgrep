@@ -4,28 +4,22 @@
 // (2) binary missing → bail with zero spawns, no background install.
 
 import assert from "node:assert/strict";
-import {
-  chmodSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { sessionWarmup } from "../src/index.ts";
 
 const makeFakeZg = (dir: string, log: string): string => {
-  const p = path.join(dir, "zg");
+  const p = path.join(dir, "zg.cjs");
   // Log every argv[0]; --version prints a version so probe caches it, the
   // `status --check-ready` route falls through to exit 0 (index ready).
   writeFileSync(
     p,
-    `#!/bin/sh\necho "$1" >> ${JSON.stringify(log)}\ncase "$1" in\n  --version) echo "0.2.1" ;;\nesac\nexit 0\n`
+    `require("node:fs").appendFileSync(${JSON.stringify(log)}, process.argv[2] + "\\n"); if(process.argv[2] === "--version") console.log("0.2.2");`
   );
-  chmodSync(p, 0o755);
   return p;
 };
 
@@ -63,6 +57,16 @@ test("warmup with ready index: probes + status-checks, no build, clears status",
     const log = path.join(dir, "calls.log");
     const { calls, ui } = makeUi();
     await sessionWarmup({ cwd: dir, ui }, { PI_ZG_BIN: makeFakeZg(dir, log) });
+    // The daemon launcher is detached. Wait for its observable spawn rather
+    // than assuming it has already executed when the status probe returns.
+    const deadline = Date.now() + 3000;
+    while (
+      !readFileSync(log, "utf-8").includes("server") &&
+      Date.now() < deadline
+    ) {
+      // oxlint-disable-next-line no-await-in-loop
+      await delay(20);
+    }
     const argv0 = new Set(
       readFileSync(log, "utf-8").split("\n").filter(Boolean)
     );

@@ -36,17 +36,26 @@
 //     query is supplied.
 
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { buildQueryArgs } from "../src/args.ts";
+import { makeRunner } from "../src/index.ts";
+import { parseQueryOutput } from "../src/parse.ts";
 
 const ok = process.env.ZG_TEST_E2E === "1";
+// Keep hermetic fixtures out of a user's shared daemon and file watchers.
+// The real Pi SDK smoke below separately exercises auto/server transport.
+const directQueryArgs = (
+  input: Parameters<typeof buildQueryArgs>[0]
+): string[] => {
+  const args = buildQueryArgs(input);
+  return args.map((arg, i) => (args[i - 1] === "--mode" ? "direct" : arg));
+};
 const scratch = (): string => {
-  const dir = mkdtempSync(`${tmpdir()}/pi-zg-e2e-`);
+  const dir = mkdtempSync(`${tmpdir()}/pi zg e2e-`);
   cpSync(
     fileURLToPath(new URL("fixtures/sample-project", import.meta.url)),
     dir,
@@ -57,37 +66,45 @@ const scratch = (): string => {
 
 (ok ? test : test.skip)(
   "e2e: probe, index, hybrid query finds hello.ts",
-  (t) => {
+  async (t) => {
     const dir = scratch();
     t.after(() => rmSync(dir, { force: true, recursive: true }));
-    const probe = spawnSync("zg", ["status", "--check-ready"], {
+    const runner = makeRunner({
       cwd: dir,
-      encoding: "utf-8",
+      env: {
+        ...process.env,
+        ZVEC_GREP_EMBEDDING: "local/potion-code-16m-v2",
+      },
     });
-    assert.ifError(probe.error);
-    assert.notEqual(probe.status, 0, "fresh scratch dir must not be ready");
-    const index = spawnSync("zg", ["index"], { cwd: dir, encoding: "utf-8" });
-    assert.equal(index.status, 0, `zg index failed: ${index.stderr}`);
-    const r = spawnSync(
-      "zg",
-      buildQueryArgs({
+    const probe = await runner.run(["status", "--check-ready"]);
+    assert.notEqual(probe.code, 0, "fresh scratch dir must not be ready");
+    const index = await runner.run(["index", "--mode", "direct"]);
+    assert.equal(index.code, 0, `zg index failed: ${index.stderr}`);
+    const r = await runner.run(
+      directQueryArgs({
         limit: 5,
         mode: "hybrid",
         preview: "short",
         query: "where is the theme restored",
-      }),
-      { cwd: dir, encoding: "utf-8" }
+      })
     );
-    assert.equal(r.status, 0, `zg query failed: ${r.stderr}`);
+    assert.equal(r.code, 0, `zg query failed: ${r.stderr}`);
     assert.match(r.stdout, /hello\.ts/u);
   }
 );
 
-(ok ? test : test.skip)("e2e: all four routes return hits", (t) => {
+(ok ? test : test.skip)("e2e: all four routes return hits", async (t) => {
   const dir = scratch();
   t.after(() => rmSync(dir, { force: true, recursive: true }));
-  const index = spawnSync("zg", ["index"], { cwd: dir, encoding: "utf-8" });
-  assert.equal(index.status, 0, `zg index failed: ${index.stderr}`);
+  const runner = makeRunner({
+    cwd: dir,
+    env: {
+      ...process.env,
+      ZVEC_GREP_EMBEDDING: "local/potion-code-16m-v2",
+    },
+  });
+  const index = await runner.run(["index", "--mode", "direct"]);
+  assert.equal(index.code, 0, `zg index failed: ${index.stderr}`);
   // Every route's argv is built by buildQueryArgs, so the e2e doubles
   // as a smoke test of the builder against the real binary. rg omits
   // --preview/--mode/--refresh internally; we still pass preview:
@@ -108,19 +125,20 @@ const scratch = (): string => {
     { glob: "*.ts", mode: "rg", preview: "none", query: "loadTheme" },
   ] as const;
   for (const m of modes) {
-    const r = spawnSync("zg", buildQueryArgs({ limit: 5, ...m }), {
-      cwd: dir,
-      encoding: "utf-8",
-    });
-    assert.equal(
-      r.status,
-      0,
-      `route ${m.mode} exited ${r.status}: ${r.stderr}`
-    );
+    // Sequential queries avoid concurrent native model loads on one fixture.
+    // oxlint-disable-next-line no-await-in-loop
+    const r = await runner.run(directQueryArgs({ limit: 5, ...m }));
+    assert.equal(r.code, 0, `route ${m.mode} exited ${r.code}: ${r.stderr}`);
     assert.match(
       r.stdout,
       /hello\.ts|loadTheme/u,
       `route ${m.mode} returned no relevant hit`
+    );
+    const parsed = parseQueryOutput(r.stdout);
+    assert.ok(
+      "results" in parsed &&
+        parsed.results.some((hit) => hit.file === "hello.ts"),
+      `route ${m.mode} should parse real paths: ${r.stdout}`
     );
   }
 });
