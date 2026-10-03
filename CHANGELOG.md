@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Rename the shared search skill from `workspace-search` to `pi-zgrep-search` to distinguish it from the retired workspace-search implementation. Keep its instructions and all search behavior unchanged.
+
 ## [v0.3.1-rodrigo.1] - 2026-10-03
 
 Windows-compatible fork of the complete upstream 0.3.0 package. Fix process/shim and daemon launching, paths with spaces and drive letters, quoted index arguments and valued flags, query error reporting, current-call cancellation, stderr progress and empty-result parsing. Retain all upstream routes, parameters, commands, lifecycle controls and environment switches.

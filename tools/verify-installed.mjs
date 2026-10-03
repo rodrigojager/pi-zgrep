@@ -19,7 +19,7 @@ try {
   const tools = session.getAllTools().map(t => t.name);
   assert.ok(tools.includes('zg'));
   assert.ok(!tools.includes('workspace_search') && !tools.includes('workspace_expand'));
-  const skills = resourceLoader.getSkills().skills.filter(s => s.name === 'workspace-search');
+  const skills = resourceLoader.getSkills().skills.filter(s => s.name === 'pi-zgrep-search');
   assert.equal(skills.length, 1, 'search skill must not be duplicated');
   const body = await readFile(skills[0].filePath, 'utf8');
   assert.ok(body.includes('pi-zgrep') && body.includes('mode: "hybrid"'));

@@ -20,7 +20,7 @@ Baseline: the complete `carvalab/pi-zgrep` 0.3.0 source tree and Git history. No
 4. Nonzero queries are explicit Pi tool errors. Streaming index errors reach progress/failure output instead of disappearing on stderr.
 5. Query cancellation uses the current tool call's signal, not the first call's cached runner. Foreground build signals and progress remain current when a shared ensure-chain is reused.
 6. Tests no longer rely on `/bin/true` or shell scripts. Real-engine fixture searches use direct transport so they do not attach test indexes to the user's shared daemon.
-7. The shared English `workspace-search` skill now documents `zg`, all four routes, filters, targeted native reads and the actual command surface. The engine's `preview=none` can still return one anchor line; the fork preserves that behavior.
+7. The shared English `pi-zgrep-search` skill documents `zg`, all four routes, filters, targeted native reads and the actual command surface. The engine's `preview=none` can still return one anchor line; the fork preserves that behavior.
 
 ## Verification
 

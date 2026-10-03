@@ -1,5 +1,5 @@
 ---
-name: workspace-search
+name: pi-zgrep-search
 description: Find local workspace evidence in Pi with pi-zgrep's zg tool; choose hybrid, vector, full-text or exact search and read only missing details.
 ---
 

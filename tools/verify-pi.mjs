@@ -71,7 +71,7 @@ try {
   session = created.session;
   const tool = session.agent.state.tools.find(t => t.name === 'zg');
   assert.ok(tool, 'zg tool inactive');
-  assert.ok(resourceLoader.getSkills().skills.some(s => s.name === 'workspace-search'));
+  assert.ok(resourceLoader.getSkills().skills.some(s => s.name === 'pi-zgrep-search'));
   // RG must work before an index exists.
   const execute = async params => {
     const result = await tool.execute('sdk-' + checked.length, params, new AbortController().signal);
